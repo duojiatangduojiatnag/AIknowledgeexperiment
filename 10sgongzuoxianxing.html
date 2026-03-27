@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 头部样式 */
+        .chat-header {
+            background: white;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .ai-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        
+        .ai-info h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .ai-info p {
+            font-size: 13px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        /* 聊天消息区域 */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 消息通用样式 */
+        .message {
+            max-width: 75%;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 用户消息 - 右侧蓝色 */
+        .user-message {
+            align-self: flex-end;
+        }
+        
+        .user-message .message-bubble {
+            background: #0084ff;
+            color: white;
+            border-radius: 18px 18px 0 18px;
+            padding: 10px 14px;
+            margin-left: auto;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        
+        /* AI消息 - 左侧灰色 */
+        .ai-message {
+            align-self: flex-start;
+        }
+        
+        .ai-message .message-bubble {
+            background: white;
+            color: #333;
+            border-radius: 18px 18px 18px 0;
+            padding: 10px 14px;
+            margin-right: auto;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            word-wrap: break-word;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+        
+        /* 时间戳 */
+        .timestamp {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+            text-align: right;
+        }
+        
+        .ai-message .timestamp {
+            text-align: left;
+        }
+        
+        /* 打字指示器 */
+        .typing-indicator {
+            background: white;
+            border-radius: 18px 18px 18px 0;
+            padding: 12px 16px;
+            display: inline-flex;
+            align-items: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            margin-bottom: 16px;
+            align-self: flex-start;
+        }
+        
+        .typing-dots {
+            display: flex;
+            align-items: center;
+        }
+        
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: #666;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-4px);
+            }
+        }
+        
+        /* 输入区域 */
+        .input-area {
+            border-top: 1px solid #e8e8e8;
+            padding: 15px 20px;
+            background: white;
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        #messageInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 15px;
+            outline: none;
+            background-color: #f5f5f5;
+            transition: all 0.3s;
+        }
+        
+        #messageInput:focus {
+            border-color: #0084ff;
+            background-color: white;
+            box-shadow: 0 0 0 1px #0084ff;
+        }
+        
+        #sendButton {
+            background: #0084ff;
+            color: white;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #sendButton:hover {
+            background: #0073e6;
+        }
+        
+        /* 逐字显示效果 - 修复版 */
+        .char {
+            opacity: 0;
+            animation: appear 0.05s forwards;
+        }
+        
+        @keyframes appear {
+            to {
+                opacity: 1;
+            }
+        }
+        
+        /* 滚动条样式 */
+        .messages-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .messages-area::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .messages-area::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 95vh;
+                width: 100%;
+                border-radius: 0;
+            }
+            
+            body {
+                padding: 0;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="ai-avatar">AI</div>
+            <div class="ai-info">
+                <h2>AI助手</h2>
+                <p>在线</p>
+            </div>
+        </div>
+        
+        <div class="messages-area" id="messagesArea">
+            <!-- 初始欢迎消息 - 只有一句话 -->
+            <div class="message ai-message">
+                <div class="message-bubble">
+                    你好！我是AI助手。我可以回答你的问题，并进行对话。
+                </div>
+                <div class="timestamp" id="welcomeTime"></div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="输入消息..."
+                    autocomplete="off"
+                >
+                <button id="sendButton">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 设置欢迎消息的时间
+        document.getElementById('welcomeTime').textContent = getCurrentTime();
+        
+        // 获取页面元素
+        const messagesArea = document.getElementById('messagesArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        
+        // AI回复库
+        const aiResponses = {
+            // 打招呼
+            "你好": "你好！我是AI助手，很高兴为你服务。",
+            
+            // 工作邮件写作指导的回复
+            "工作邮件": `在撰写专业工作邮件时，遵循一些核心原则可以有效提升沟通的清晰度与正式感。以下是一份涵盖关键细节的指南，供您参考：
+（1）结构完整性：确保格式规范
+一封专业的邮件应具备完整的结构，通常包括：明确的称呼、逻辑清晰的正文、礼貌的结束语以及包含联系方式的署名。
+（2）主题行优化：力求精准概括
+主题行是邮件的“门面”，应简洁、准确地概括邮件核心目的或内容。避免使用模糊或过于冗长的表述。
+（3）语言与语气：保持正式得体
+使用规范、礼貌的书面语，避免口语化表达、网络用语或随意的缩写。措辞应尊重、中立，即使是在提出不同意见或要求时，也应维持专业的沟通基调。
+（4）内容组织：强调逻辑与可读性
+正文段落应聚焦，每段阐述一个主要观点。合理使用分段、项目符号或编号列表来分解复杂信息，使重点突出。
+（5）行动号召：明确后续步骤
+在邮件结尾处，清晰说明您期望收件人采取的下一步行动、回复的截止日期或所需的支持。
+综合运用以上要点，您可以更有效地构建出专业、清晰且易于处理的工作邮件。根据具体的沟通对象与场景，您可以适度调整语气的正式程度。`,
+            
+            // 默认回复
+            "默认": "我理解你的问题。作为一个AI助手，我会尽力提供有用的回答。"
+        };
+        
+        // 发送消息的函数
+        function sendMessage() {
+            // 1. 获取用户输入
+            const userMessage = messageInput.value.trim();
+            if (!userMessage) return;
+            
+            // 2. 显示用户消息
+            showUserMessage(userMessage);
+            
+            // 3. 清空输入框
+            messageInput.value = '';
+            
+            // 4. 显示AI正在输入（固定5秒延迟）
+            showAITyping(userMessage);
+        }
+        
+        // 显示用户消息
+        function showUserMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user-message';
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            bubbleDiv.textContent = text;
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'timestamp';
+            timeDiv.textContent = getCurrentTime();
+            
+            messageDiv.appendChild(bubbleDiv);
+            messageDiv.appendChild(timeDiv);
+            
+            messagesArea.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        // 显示AI正在输入的提示
+        function showAITyping(userMessage) {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            
+            const dotsDiv = document.createElement('div');
+            dotsDiv.className = 'typing-dots';
+            dotsDiv.innerHTML = '<span></span><span></span><span></span>';
+            
+            typingDiv.appendChild(dotsDiv);
+            
+            messagesArea.appendChild(typingDiv);
+            scrollToBottom();
+            
+            // 固定5秒延迟后回复
+            const delay = 10000; // 10000毫秒 = 10秒
+            setTimeout(() => {
+                typingDiv.remove();
+                showAIResponse(userMessage);
+            }, delay);
+        }
+        
+        // 显示AI回复
+        function showAIResponse(userMessage) {
+            // 获取对应的回复
+            const aiResponse = getResponse(userMessage);
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai-message';
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            bubbleDiv.id = 'aiResponseContent';
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'timestamp';
+            timeDiv.textContent = getCurrentTime();
+            
+            messageDiv.appendChild(bubbleDiv);
+            messageDiv.appendChild(timeDiv);
+            
+            messagesArea.appendChild(messageDiv);
+            
+            // 统一使用逐字显示，无论是哪种回复
+            typeTextComplete(aiResponse, bubbleDiv, 40);
+            
+            scrollToBottom();
+        }
+        
+        // 根据用户消息获取回复
+        function getResponse(userMessage) {
+            const message = userMessage.toLowerCase();
+            
+            // 1. 检查是否包含工作邮件写作问题
+            if (message.includes('工作邮件') || 
+                (message.includes('邮件') && message.includes('专业')) ||
+                message.includes('写邮件') ||
+                message.includes('邮件写作') ||
+                message.includes('邮件细节')) {
+                return aiResponses["工作邮件"];
+            }
+            // 2. 检查是否打招呼
+            else if (message.includes('你好') || 
+                    message.includes('hi') || 
+                    message.includes('hello') ||
+                    message.includes('您好')) {
+                return aiResponses["你好"];
+            }
+            // 3. 其他问题
+            else {
+                return aiResponses["默认"];
+            }
+        }
+        
+        // 修复的逐字显示函数 - 确保每个字符都逐个出现
+        function typeTextComplete(text, element, speed = 40) {
+            let index = 0;
+            
+            function typeNextChar() {
+                if (index < text.length) {
+                    // 获取当前字符
+                    const char = text[index];
+                    
+                    // 处理换行符
+                    if (char === '\n') {
+                        // 创建换行元素
+                        const br = document.createElement('br');
+                        element.appendChild(br);
+                    } else {
+                        // 创建字符元素
+                        const charSpan = document.createElement('span');
+                        charSpan.className = 'char';
+                        charSpan.textContent = char;
+                        charSpan.style.animationDelay = `${index * 0.03}s`;
+                        element.appendChild(charSpan);
+                    }
+                    
+                    index++;
+                    
+                    // 继续下一个字符
+                    setTimeout(typeNextChar, speed);
+                    
+                    // 滚动到底部
+                    scrollToBottom();
+                }
+            }
+            
+            // 开始逐字显示
+            typeNextChar();
+        }
+        
+        // 获取当前时间（时:分）
+        function getCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        
+        // 滚动到底部
+        function scrollToBottom() {
+            setTimeout(() => {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }, 100);
+        }
+        
+        // 事件监听
+        sendButton.addEventListener('click', sendMessage);
+        
+        messageInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // 页面加载时，让输入框自动获得焦点
+        window.addEventListener('load', function() {
+            messageInput.focus();
+        });
+    </script>
+<!-- 新增功能：答案生成结束后135秒自动关闭窗口 -->
+<script>
+(function() {
+    "use strict";
+    const messagesArea = document.getElementById('messagesArea');
+    if (!messagesArea) return;
+    let closeTimer = null;
+    let latestAIMessage = null;
+    function forceCloseWindow() {
+        try { window.close(); } catch (e) {
+            try { window.open('', '_self', ''); window.close(); } catch (e2) { alert('135秒无新互动，建议手动关闭此窗口。'); }
+        }
+    }
+    function clearCloseTimer() { if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; } }
+    function startCloseTimer() { clearCloseTimer(); closeTimer = setTimeout(forceCloseWindow, 135000); }  // ⬅️ 这里改成了135000
+    function monitorBubbleCompletion(aiMessageElement) {
+        const bubble = aiMessageElement.querySelector('.message-bubble');
+        if (!bubble) return;
+        if (bubble.dataset.monitorAttached === 'true') return;
+        bubble.dataset.monitorAttached = 'true';
+        let stableTimer = null;
+        const observer = new MutationObserver(() => {
+            if (stableTimer) clearTimeout(stableTimer);
+            stableTimer = setTimeout(() => {
+                if (aiMessageElement === latestAIMessage) startCloseTimer();
+                observer.disconnect();
+            }, 200);
+        });
+        observer.observe(bubble, { childList: true, subtree: false });
+    }
+    const areaObserver = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType !== 1) return;
+                if (node.classList && node.classList.contains('ai-message')) {
+                    latestAIMessage = node;
+                    monitorBubbleCompletion(node);
+                }
+            });
+        });
+    });
+    areaObserver.observe(messagesArea, { childList: true, subtree: false });
+    window.addEventListener('beforeunload', function() {
+        if (closeTimer) clearTimeout(closeTimer);
+        if (areaObserver) areaObserver.disconnect();
+    });
+})();
+</script>
+</body>
+</html>
